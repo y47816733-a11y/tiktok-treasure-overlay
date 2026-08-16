@@ -1,10 +1,9 @@
 import express from "express";
 import http from "http";
 import { Server } from "socket.io";
-import {
-  TikTokLiveConnection,
-  WebcastEvent
-} from "tiktok-live-connector";
+import TikTokLiveConnector from "tiktok-live-connector";
+
+const { TikTokLiveConnection, WebcastEvent } = TikTokLiveConnector;
 
 const app = express();
 const server = http.createServer(app);
@@ -12,13 +11,13 @@ const io = new Server(server);
 
 app.use(express.static("public"));
 
-let connection;
+let connection = null;
 
 io.on("connection", (socket) => {
-
   socket.on("connectTikTok", async (username) => {
-
     username = username.replace("@", "").trim();
+
+    if (!username) return;
 
     try {
       connection = new TikTokLiveConnection(username);
