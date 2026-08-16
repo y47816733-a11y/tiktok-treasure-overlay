@@ -1,7 +1,10 @@
-const express = require("express");
-const http = require("http");
-const { Server } = require("socket.io");
-const { TikTokLiveConnection } = require("tiktok-live-connector");
+import express from "express";
+import http from "http";
+import { Server } from "socket.io";
+import {
+  TikTokLiveConnection,
+  WebcastEvent
+} from "tiktok-live-connector";
 
 const app = express();
 const server = http.createServer(app);
@@ -9,7 +12,7 @@ const io = new Server(server);
 
 app.use(express.static("public"));
 
-let connection = null;
+let connection;
 
 io.on("connection", (socket) => {
 
@@ -17,37 +20,30 @@ io.on("connection", (socket) => {
 
     username = username.replace("@", "").trim();
 
-    if (!username) return;
-
     try {
-
       connection = new TikTokLiveConnection(username);
 
-      connection.on("connected", () => {
+      connection.on(WebcastEvent.CONNECTED, () => {
         console.log("TikTok bağlandı:", username);
         socket.emit("status", "TikTok'a bağlandı ✅");
       });
 
-      connection.on("disconnected", () => {
-        socket.emit("status", "TikTok bağlantısı kesildi");
+      connection.on(WebcastEvent.DISCONNECTED, () => {
+        socket.emit("status", "Bağlantı kesildi");
       });
 
-      connection.on("error", (error) => {
-        console.log(error);
+      connection.on(WebcastEvent.ERROR, (error) => {
+        console.error("TikTok hata:", error);
         socket.emit("status", "TikTok bağlantı hatası ❌");
       });
 
       await connection.connect();
 
     } catch (error) {
-
-      console.log(error);
+      console.error("BAĞLANTI HATASI:", error);
       socket.emit("status", "Bağlanamadı ❌");
-
     }
-
   });
-
 });
 
 const PORT = process.env.PORT || 10000;
